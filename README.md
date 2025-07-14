@@ -240,3 +240,4 @@ curl -X POST http://localhost:3000/cities \
 ---
 
 **Happy coding! 🚀** 
+>>>>>>> b8022f0 (v1)

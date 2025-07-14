@@ -183,13 +183,15 @@ export function createAPIRoutes(database: Database): Router {
       const cityInfo = apiResponse.city;
       
       // Insert new city with proper fallbacks for missing data
+      // Use a reasonable default population if API doesn't provide it (Zod requires positive integer)
+      const defaultPopulation = 1000; // Reasonable fallback for small communes
       await database.run(
         'INSERT INTO city (insee, name, zipcode, population) VALUES (?, ?, ?, ?)',
         [
           cityInfo.insee, 
           cityInfo.name || 'Unknown City', 
           cityInfo.cp?.toString() || cityInfo.zipcode || cityInfo.insee.substring(0, 5), // Use cp field or fallback
-          cityInfo.population || 0
+          cityInfo.population || defaultPopulation
         ]
       );
 
@@ -198,7 +200,7 @@ export function createAPIRoutes(database: Database): Router {
         insee: cityInfo.insee,
         name: cityInfo.name || 'Unknown City',
         zipcode: cityInfo.cp?.toString() || cityInfo.zipcode || cityInfo.insee.substring(0, 5),
-        population: cityInfo.population || 0
+        population: cityInfo.population || defaultPopulation
       });
 
     } catch (error) {

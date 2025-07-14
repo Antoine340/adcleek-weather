@@ -13,7 +13,7 @@ import { onMounted, ref } from 'vue'
 import { useApi } from '~/composables/useApi'
 
 const { useCities } = useApi()
-const { data, loading, error, fetchCities, addCity } = useCities()
+const { data, loading, error, fetchCities, addCity, clearError } = useCities()
 
 const newCityInsee = ref('')
 const selectedCity = ref<City | null>(null)
@@ -124,8 +124,17 @@ onMounted(() => {
     </div>
 
     <!-- Error Message -->
-    <div v-if="error" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-      <strong>Error:</strong> {{ error }}
+    <div v-if="error" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex justify-between items-center">
+      <div>
+        <strong>Error:</strong> {{ error }}
+      </div>
+      <button
+        @click="clearError"
+        class="text-red-600 hover:text-red-800 font-bold"
+        title="Dismiss error"
+      >
+        ×
+      </button>
     </div>
 
     <!-- Main Content Grid -->

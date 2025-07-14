@@ -11,10 +11,14 @@ interface ApiState<T> {
 
 export function useApi() {
   // Cities API
-  const useCities = (): ApiState<Cities> & { fetchCities: () => Promise<void>, addCity: (city: CreateCity) => Promise<void> } => {
+  const useCities = (): ApiState<Cities> & { fetchCities: () => Promise<void>, addCity: (city: CreateCity) => Promise<void>, clearError: () => void } => {
     const data = ref<Cities | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
+
+    const clearError = () => {
+      error.value = null
+    }
 
     const fetchCities = async () => {
       loading.value = true
@@ -23,13 +27,16 @@ export function useApi() {
       try {
         const response = await fetch(`${API_BASE_URL}/cities`)
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
         }
-        data.value = await response.json()
+        const result = await response.json()
+        data.value = result
       }
       catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to fetch cities'
         console.error('Error fetching cities:', err)
+        // Don't clear existing data on error to keep app usable
       }
       finally {
         loading.value = false
@@ -49,16 +56,20 @@ export function useApi() {
           body: JSON.stringify(city),
         })
         if (!response.ok) {
-          const errorData = await response.json()
+          const errorData = await response.json().catch(() => ({}))
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
         }
 
-        // Refresh cities list after adding
+        // Refresh cities list after successful add
         await fetchCities()
       }
       catch (err) {
         error.value = err instanceof Error ? err.message : 'Failed to add city'
         console.error('Error adding city:', err)
+        // Auto-clear error after 5 seconds for better UX
+        setTimeout(() => {
+          error.value = null
+        }, 5000)
       }
       finally {
         loading.value = false
@@ -71,14 +82,19 @@ export function useApi() {
       error,
       fetchCities,
       addCity,
+      clearError,
     }
   }
 
   // Weather API
-  const useWeather = (insee: string): ApiState<WeatherResponse> & { fetchWeather: () => Promise<void> } => {
+  const useWeather = (insee: string): ApiState<WeatherResponse> & { fetchWeather: () => Promise<void>, clearError: () => void } => {
     const data = ref<WeatherResponse | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
+
+    const clearError = () => {
+      error.value = null
+    }
 
     const fetchWeather = async () => {
       loading.value = true
@@ -87,7 +103,8 @@ export function useApi() {
       try {
         const response = await fetch(`${API_BASE_URL}/weather/${insee}`)
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
         }
         data.value = await response.json()
       }
@@ -105,6 +122,7 @@ export function useApi() {
       loading,
       error,
       fetchWeather,
+      clearError,
     }
   }
 
